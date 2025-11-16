@@ -1,0 +1,59 @@
+.refund-policy-container {  
+    /* max-width: 800px;   */
+    margin: auto;  
+    padding: 20px;  
+    font-family: Arial, sans-serif;  
+    background-color: #ffffff;  
+    border-radius: 8px;  
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);  
+    line-height: 1.6;  
+}  
+
+.policy-title {  
+    color: #333;  
+    border-bottom: 3px solid #818589;  
+    padding-bottom: 10px;  
+    margin-bottom: 15px;  
+    font-size: 24px;  
+}  
+
+.policy-intro {  
+    color: #555;  
+    font-size: 16px;  
+}  
+
+.policy-section {  
+    margin-top: 20px;  
+    color: #444;  
+    font-size: 20px;  
+    font-weight: bold;  
+}  
+
+.eligibility-list, .non-refund-list {  
+    list-style-type: disc;  
+    margin: 10px 0 10px 20px;  
+    color: #333;  
+}  
+
+.process-list {  
+    list-style-type: decimal;  
+    margin: 10px 0 10px 20px;  
+    color: #333;  
+}  
+
+.support-email {  
+    color: #007bff;  
+    text-decoration: underline;  
+}  
+
+.contact-details {  
+    background-color: #f9f9f9;  
+    padding: 10px;  
+    border-radius: 5px;  
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);  
+}  
+
+.policy-conclusion {  
+    margin-top: 20px;  
+    color: #666;  
+}  

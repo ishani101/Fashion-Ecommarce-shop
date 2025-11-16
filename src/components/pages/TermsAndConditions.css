@@ -1,0 +1,42 @@
+.terms-container {  
+    
+    margin: auto;  
+    padding: 20px;  
+    font-family: Arial, sans-serif;  
+    background-color: #ffffff;  
+    border-radius: 8px;  
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);  
+    line-height: 1.6;  
+}  
+
+.terms-title {  
+    color: #333;  
+    border-bottom: 3px solid #818589;  
+    padding-bottom: 10px;  
+    margin-bottom: 15px;  
+    font-size: 24px;  
+}  
+
+.intro-text {  
+    color: #555;  
+    font-size: 16px;  
+}  
+
+.terms-section {  
+    margin-top: 20px;  
+    color: #444;  
+    font-size: 20px;  
+    font-weight: bold;  
+}  
+
+.contact-details {  
+    background-color: #f9f9f9;  
+    padding: 10px;  
+    border-radius: 5px;  
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);  
+}  
+
+.support-email {  
+    color: #007bff;  
+    text-decoration: underline;  
+}  
