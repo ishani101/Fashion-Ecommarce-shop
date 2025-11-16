@@ -6,14 +6,17 @@ import {
   setTotalProducts,
 } from "../features/shop/shopSlice";
 
-const ProductGridWrapper = ({
-  searchQuery,
-  sortCriteria,
-  category,
-  page,
-  limit,
-  children,
-}: {
+/** Minimal Product type — adjust fields to match your backend model */
+type Product = {
+  id: string | number;
+  title: string;
+  price: number;
+  category?: string;
+  popularity?: number;
+  // add other fields you actually use...
+};
+
+type Props = {
   searchQuery?: string;
   sortCriteria?: string;
   category?: string;
@@ -22,91 +25,107 @@ const ProductGridWrapper = ({
   children:
     | ReactElement<{ products: Product[] }>
     | ReactElement<{ products: Product[] }>[];
+};
+
+const ProductGridWrapper: React.FC<Props> = ({
+  searchQuery = "",
+  sortCriteria = "",
+  category,
+  page = 1,
+  limit,
+  children,
 }) => {
+  // products state + setter (you were calling setProducts in your logic)
   const [products, setProducts] = useState<Product[]>([]);
-  const { totalProducts } = useAppSelector((state) => state.shop);
   const dispatch = useAppDispatch();
 
-  // Memoize the function to prevent unnecessary re-renders
-  // getSearchedProducts will be called only when searchQuery or sortCriteria changes
+  // Read totalProducts from redux so comparison works
+  const totalProducts = useAppSelector((state: any) => state.shop.totalProducts);
+
+  // fetch & filter products
   const getSearchedProducts = useCallback(
-    async (query: string, sort: string, page: number) => {
-      if (!query || query.length === 0) {
-        query = "";
-      }
-      const response = await customFetch("/products");
-      const allProducts = await response.data;
-      let searchedProducts = allProducts.filter((product: Product) =>
-        product.title.toLowerCase().includes(query.toLowerCase())
-      );
+    async (query: string, sort: string, pageNo: number) => {
+      try {
+        // fetch products
+        const response = await customFetch("/products");
+        // response.data might already be the array; adjust if API differs
+        const allProducts: Product[] = response.data ?? [];
 
-      if (category) {
-        searchedProducts = searchedProducts.filter((product: Product) => {
-          return product.category === category;
-        });
-      }
+        // filter by query
+        let searchedProducts = allProducts.filter((product: Product) =>
+          product.title.toLowerCase().includes((query || "").toLowerCase())
+        );
 
-      if (totalProducts !== searchedProducts.length) {
-        dispatch(setTotalProducts(searchedProducts.length));
-      }
+        // filter by category (if provided)
+        if (category) {
+          searchedProducts = searchedProducts.filter(
+            (product: Product) => product.category === category
+          );
+        }
 
-      // Sort the products based on the sortCriteria
-      if (sort === "price-asc") {
-        searchedProducts = searchedProducts.sort(
-          (a: Product, b: Product) => a.price - b.price
-        );
-      } else if (sort === "price-desc") {
-        searchedProducts = searchedProducts.sort(
-          (a: Product, b: Product) => b.price - a.price
-        );
-      } else if (sort === "popularity") {
-        searchedProducts = searchedProducts.sort(  
-          (a: Product, b: Product) =>   
-            (b.popularity ?? 0) - (a.popularity ?? 0) // Default to 0 if popularity is undefined  
-        );  
-      }
-      // Limit the number of products to be displayed
-      if (limit) {
-        setProducts(searchedProducts.slice(0, limit));
-        // Set the number of products being displayed
-        // This will be displayed in the ShowingPagination component
-        dispatch(setShowingProducts(searchedProducts.slice(0, limit).length));
-        // If page is provided, slice the products based on the page number
-        // this will be used for pagination
-      } else if (page) {
-        setProducts(searchedProducts.slice(0, page * 9));
-        // Set the number of products being displayed
-        // This will be displayed in the ShowingPagination component
-        dispatch(
-          setShowingProducts(searchedProducts.slice(0, page * 9).length)
-        );
-        // If no limit or page is provided, display all the products
-      } else {
-        setProducts(searchedProducts);
-        // Set the number of products being displayed
-        dispatch(setShowingProducts(searchedProducts.length));
+        // update totalProducts in redux if changed
+        if (totalProducts !== searchedProducts.length) {
+          dispatch(setTotalProducts(searchedProducts.length));
+        }
+
+        // sort
+        if (sort === "price-asc") {
+          searchedProducts = searchedProducts.sort(
+            (a: Product, b: Product) => a.price - b.price
+          );
+        } else if (sort === "price-desc") {
+          searchedProducts = searchedProducts.sort(
+            (a: Product, b: Product) => b.price - a.price
+          );
+        } else if (sort === "popularity") {
+          searchedProducts = searchedProducts.sort(
+            (a: Product, b: Product) => (b.popularity ?? 0) - (a.popularity ?? 0)
+          );
+        }
+
+        // paginate / limit
+        if (limit && limit > 0) {
+          const sliced = searchedProducts.slice(0, limit);
+          setProducts(sliced);
+          dispatch(setShowingProducts(sliced.length));
+        } else if (pageNo && pageNo > 0) {
+          const perPage = 9; // you used 9 earlier — change if needed
+          const sliced = searchedProducts.slice(0, pageNo * perPage);
+          setProducts(sliced);
+          dispatch(setShowingProducts(sliced.length));
+        } else {
+          setProducts(searchedProducts);
+          dispatch(setShowingProducts(searchedProducts.length));
+        }
+      } catch (err) {
+        // handle API error (log or dispatch error state)
+        // keep products as-is or set to empty
+        console.error("getSearchedProducts error:", err);
+        setProducts([]);
+        dispatch(setShowingProducts(0));
       }
     },
-    []
+    // dependencies: include things used inside callback
+    [category, limit, totalProducts, dispatch]
   );
 
+  // call on mount / when inputs change
   useEffect(() => {
     getSearchedProducts(searchQuery || "", sortCriteria || "", page || 1);
-  }, [searchQuery, sortCriteria, page]);
+    // `getSearchedProducts` already depends on category/limit/totalProducts/dispatch
+  }, [searchQuery, sortCriteria, page, getSearchedProducts]);
 
-  // Clone the children and pass the products as props to the children
-  // This will cause the children to re-render with the new products
-  // Also it will cause many re-renders if the children are not memoized
-  // So I memoized the ProductGrid component
+  // clone children and pass products prop
   const childrenWithProps = React.Children.map(children, (child) => {
-    // Checking isValidElement is the safe way and avoids a
-    // typescript error too.
-    if (React.isValidElement(child) && products.length > 0) {
-      return React.cloneElement(child, { products: products });
+    if (React.isValidElement(child)) {
+      // Always pass products (even empty array) so child won't break
+      return React.cloneElement(child, { products });
     }
     return null;
   });
 
-  return childrenWithProps;
+  // Return a fragment containing the children (could be array or single)
+  return <>{childrenWithProps}</>;
 };
+
 export default ProductGridWrapper;
